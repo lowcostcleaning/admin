@@ -1,130 +1,167 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lowcost Cleaning — Панель статусов</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
-      background: #f8f8f8;
-      color: #111;
-      margin: 0;
-      text-align: center;
-    }
-    h1 {
-      margin-top: 60px;
-      font-size: 1.8rem;
-    }
-    p {
-      color: #777;
-      margin-bottom: 40px;
-    }
-    .sheet {
-      margin: 40px auto;
-      width: 90%;
-      max-width: 680px;
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-      overflow: hidden;
-    }
-    h2 {
-      background: #fafafa;
-      padding: 14px;
-      margin: 0;
-      font-size: 1.1rem;
-      border-bottom: 1px solid #eee;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 10px 14px;
-      text-align: center;
-      border-bottom: 1px solid #eee;
-    }
-    th {
-      background: #fafafa;
-      font-weight: 600;
-    }
-    .status {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-    }
-    .занято { background: #ffebeb; color: #d00; }
-    .свободно, .ожидание, .отказ, .green { background: #e7fbee; color: #070; }
-    .loading {
-      color: #999;
-      padding: 20px;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Lowcost Cleaning — Админ панель статусов</title>
+<style>
+  :root{--bg:#f7f7f7;--card:#fff;--muted:#666;--green:#34c759;--red:#ff3b30;--radius:14px}
+  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,sans-serif;background:var(--bg);color:#111;margin:0;padding:32px;display:flex;flex-direction:column;align-items:center;}
+  h1{margin:0 0 8px;font-size:28px}
+  p.lead{margin:0 0 24px;color:var(--muted)}
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tab{padding:10px 14px;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
+  .tab.active{background:#111;color:#fff}
+  .card{width:min(920px,95%);background:var(--card);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.06);margin-bottom:20px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #f0f0f0}
+  th{background:#fafafa}
+  select.status{padding:6px 10px;border-radius:10px;border:1px solid #e6e6e6}
+  .note{color:var(--muted);font-size:13px;margin-bottom:10px}
+  .toast{position:fixed;right:20px;top:20px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;opacity:0;transform:translateY(-6px);transition:all .25s}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .loading{color:var(--muted);padding:24px;text-align:center}
+  .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  .small{font-size:13px;color:var(--muted)}
+  input.webhook{width:420px;padding:8px 10px;border-radius:8px;border:1px solid #e6e6e6}
+  button.save{padding:8px 12px;border-radius:10px;border:none;background:#111;color:#fff;cursor:pointer}
+  .row-date{width:160px}
+</style>
 </head>
 <body>
-  <h1>🧹 Lowcost Cleaning</h1>
-  <p>Панель статусов (данные из Google Sheets)</p>
-  <div id="content">⏳ Загрузка...</div>
+  <h1>📋 Панель статусов — Lowcost Cleaning</h1>
+  <p class="lead">Здесь можно просмотреть и обновлять статусы с отправкой в n8n.</p>
 
-  <script>
-    const BASE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8zb-CjwcHeTuOYB5iT5jz5RdMPaz0_BrTT6E1jPtaXfSbh7O1xykOE5WI92idU6A-SZ2GLzdcgtMU/pub?gid=";
-    const SHEETS = {
-      "Главный": "0",
-      "Химчистка": "591986483",
-      "Апартаменты": "1636464154"
-    };
+  <div class="card">
+    <div class="controls">
+      <div class="tabs">
+        <div class="tab active" data-sheet="Главный">🏠 Главный</div>
+        <div class="tab" data-sheet="Химчистка">🧺 Химчистка</div>
+        <div class="tab" data-sheet="Апартаменты">🏢 Апартаменты</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <span class="small">Webhook:</span>
+        <input id="webhookInput" class="webhook" placeholder="https://vm62681.vpsone.xyz/webhook-test/status" />
+        <button id="saveWebhook" class="save">Сохранить</button>
+      </div>
+    </div>
 
-    async function fetchSheet(name, gid) {
-      const url = `${BASE_URL}${gid}&single=true&output=csv&nocache=${Date.now()}`;
-      const res = await fetch(url);
-      const text = await res.text();
-      const rows = text.split("\n").map(r => r.split(",").map(c => c.trim().replace(/"/g, "")));
-      return { name, rows };
-    }
+    <div id="content"><p class="loading">Загрузка...</p></div>
+  </div>
 
-    function renderSheet({ name, rows }) {
-      if (rows.length < 2) return "";
-      const headers = rows[0].map(h => h.toLowerCase());
-      const dateIndex = headers.findIndex(h => h.includes("дата"));
-      const statusIndex = headers.findIndex(h => h.includes("статус"));
-      const timeIndex = headers.findIndex(h => h.includes("время"));
-      let html = `<div class="sheet"><h2>📋 ${name}</h2><table><thead><tr><th>Дата</th><th>Статус</th></tr></thead><tbody>`;
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row[dateIndex]) continue;
-        const date = row[dateIndex] || "";
-        const status = (row[statusIndex] || "").toLowerCase();
-        const time = row[timeIndex] || "";
-        let value = "";
-        if (name === "Апартаменты") value = time || "-";
-        else value = status || "-";
-        let cls = "status";
-        if (["занято"].includes(status)) cls += " занято";
-        else if (["свободно","ожидание","отказ"].includes(status)) cls += " свободно";
-        else cls += " green";
-        html += `<tr><td>${date}</td><td><span class="${cls}">${value}</span></td></tr>`;
-      }
-      html += "</tbody></table></div>";
-      return html;
-    }
+  <div id="toast" class="toast">Готово</div>
 
-    async function loadAll() {
-      const content = document.getElementById("content");
-      content.innerHTML = "⏳ Загружаем...";
-      try {
-        const sheets = await Promise.all(
-          Object.entries(SHEETS).map(([name, gid]) => fetchSheet(name, gid))
-        );
-        const html = sheets.map(renderSheet).join("");
-        content.innerHTML = html;
-      } catch (e) {
-        content.innerHTML = `<p class="loading">Ошибка загрузки данных</p>`;
-      }
-    }
+<script>
+const WEBHOOK_URL_KEY = "lc_webhook_url";
+const GIDS = {
+  "Главный":"0",
+  "Химчистка":"591986483",
+  "Апартаменты":"1636464154"
+};
+const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8zb-CjwcHeTuOYB5iT5jz5RdMPaz0_BrTT6E1jPtaXfSbh7O1xykOE5WI92idU6A-SZ2GLzdcgtMU/pub?gid=";
 
-    loadAll();
-  </script>
+let activeSheet = "Главный";
+const content = document.getElementById("content");
+const toast = document.getElementById("toast");
+const webhookInput = document.getElementById("webhookInput");
+const saveWebhook = document.getElementById("saveWebhook");
+
+webhookInput.value = localStorage.getItem(WEBHOOK_URL_KEY) || "";
+saveWebhook.addEventListener("click", ()=>{
+  localStorage.setItem(WEBHOOK_URL_KEY, webhookInput.value.trim());
+  showToast("Webhook сохранён");
+});
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    activeSheet = t.dataset.sheet;
+    loadSheet(activeSheet);
+  });
+});
+
+function showToast(msg){
+  toast.textContent=msg;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"),2200);
+}
+
+async function fetchCsv(gid){
+  const url = `${BASE_CSV}${gid}&single=true&output=csv&nocache=${Date.now()}`;
+  const res = await fetch(url,{cache:"no-store"});
+  if(!res.ok) throw new Error("Ошибка загрузки CSV");
+  const txt = await res.text();
+  return txt.split("\n").map(r=>r.split(",").map(c=>c.trim().replace(/^"|"$/g,"")));
+}
+
+async function loadSheet(sheetName){
+  content.innerHTML = `<p class="loading">Загрузка ${sheetName}...</p>`;
+  try{
+    const gid = GIDS[sheetName];
+    const rows = await fetchCsv(gid);
+    const data = rows.filter(r => r && r.length && r.some(cell=>cell!==""));
+    const header = data[0]||[];
+    const body = data.slice(1);
+    let html = `<div class="note">Лист: <b>${sheetName}</b> — строк: ${body.length}</div>`;
+    html += `<table><thead><tr>${header.map(h=>`<th>${h}</th>`).join("")}<th>Действие</th></tr></thead><tbody>`;
+    body.forEach((row,idx)=>{
+      const rowIndex = idx+2;
+      html += `<tr data-row="${rowIndex}">`;
+      row.forEach((cell,ci)=>{
+        const h = (header[ci]||"").toLowerCase();
+        if(h.includes("статус")){
+          const s = cell.toLowerCase();
+          const opts=["свободно","занято","ожидание","отказ",""];
+          html += `<td><select class="status" data-col="${ci}">
+            ${opts.map(o=>`<option value="${o}" ${o===s?"selected":""}>${o||"—"}</option>`).join("")}
+            <option value="__other__">Другое...</option>
+          </select></td>`;
+        }else html+=`<td>${cell}</td>`;
+      });
+      html+=`<td><button class="save-row">Сохранить</button></td></tr>`;
+    });
+    html+="</tbody></table>";
+    content.innerHTML=html;
+    document.querySelectorAll(".save-row").forEach(btn=>{
+      btn.addEventListener("click",async()=>{
+        const tr=btn.closest("tr");
+        const row=tr.dataset.row;
+        const sel=tr.querySelector("select.status");
+        const newStatus=sel?sel.value:"";
+        const dateCell=tr.querySelector("td")?.textContent.trim()||"";
+        try{
+          await sendWebhook({
+            sheet:activeSheet,
+            row:row,
+            date:dateCell,
+            status:newStatus
+          });
+          showToast("✅ Отправлено");
+        }catch(err){
+          console.error(err);
+          showToast("⚠️ Ошибка");
+        }
+      });
+    });
+  }catch(err){
+    console.error(err);
+    content.innerHTML="<p class='loading'>Ошибка загрузки данных</p>";
+  }
+}
+
+// 🚀 Отправка запроса в n8n (метод GET)
+async function sendWebhook(payload){
+  const baseUrl=(localStorage.getItem(WEBHOOK_URL_KEY)||"").trim();
+  if(!baseUrl) throw new Error("Webhook URL не указан");
+  const params=new URLSearchParams(payload);
+  const url=`${baseUrl}?${params.toString()}`;
+  const res=await fetch(url,{method:"GET",cache:"no-store"});
+  if(!res.ok) throw new Error("Ошибка "+res.status);
+  return res;
+}
+
+loadSheet(activeSheet);
+</script>
 </body>
 </html>
