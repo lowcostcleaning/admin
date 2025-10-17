@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Lowcost Cleaning — Админ панель статусов</title>
+<title>Lowcost Cleaning — Панель статусов</title>
 <style>
   :root {
     --bg:#f6f6f6;
@@ -56,7 +56,7 @@
   }
 
   .card {
-    width:min(920px,95%);
+    width:min(900px,95%);
     background:var(--card);
     border-radius:16px;
     padding:18px;
@@ -258,8 +258,14 @@ async function loadSheet(sheetName) {
     const headers = data[0] || [];
     const body = data.slice(1);
 
-    // Показываем только нужные колонки
-    const visibleCols = ["дата", "статус", "услуга", "адрес", "имя", "телефон", "ватсап", "телеграм"];
+    // видимые колонки по листу
+    let visibleCols = [];
+    if (sheetName === "Апартаменты") {
+      visibleCols = ["дата", "время", "статус", "жк", "апартамент"];
+    } else {
+      visibleCols = ["дата", "статус", "адрес"];
+    }
+
     const colIndexes = headers.map((h, i) => visibleCols.includes(h.toLowerCase()) ? i : -1).filter(i => i !== -1);
 
     let html = `<div class="note">Лист: <b>${sheetName}</b> — строк: ${body.length}</div>`;
@@ -275,7 +281,6 @@ async function loadSheet(sheetName) {
           const opts = ["свободно", "занято", "ожидание", "отказ", ""];
           html += `<td><select class="status" data-col="${ci}">
             ${opts.map(o => `<option value="${o}" ${o === cell.toLowerCase() ? "selected" : ""}>${o || "—"}</option>`).join("")}
-            <option value="__other__">Другое...</option>
           </select></td>`;
         } else html += `<td>${cell}</td>`;
       });
