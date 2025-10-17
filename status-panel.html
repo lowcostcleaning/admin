@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lowcost Cleaning — Панель статусов</title>
+  <style>
+    :root {
+      --bg-light: #f8f8f8;
+      --text-primary: #111;
+      --text-muted: #666;
+      --radius: 14px;
+      --shadow-soft: 0 8px 20px rgba(0,0,0,0.06);
+      --green: #34c759;
+      --red: #ff3b30;
+      --yellow: #ffcc00;
+      --gray: #ccc;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
+      background: var(--bg-light);
+      margin: 0;
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      text-align: center;
+    }
+    header { padding: 40px 20px 20px; }
+    h1 { font-size: 1.8rem; margin-bottom: 8px; }
+    .tabs { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .tab-btn {
+      background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius);
+      padding: 10px 18px; font-size: 1rem; cursor: pointer; transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .tab-btn.active { background: #000; color: #fff; }
+    .table-wrapper {
+      margin: 0 auto; width: 90%; max-width: 800px; background: #fff; border-radius: 18px;
+      box-shadow: var(--shadow-soft); padding: 20px; overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+    th { background: #fafafa; font-weight: 600; }
+    .status {
+      font-weight: 600; text-transform: capitalize; display: inline-block;
+      padding: 6px 12px; border-radius: 10px; color: #fff; font-size: 0.85rem;
+    }
+    .status.свободно { background: var(--green); }
+    .status.занято { background: var(--red); }
+    .status.ожидание { background: var(--yellow); color: #000; }
+    .status.отказ { background: var(--gray); color: #000; }
+    .loading { margin-top: 40px; font-size: 1rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<header>
+  <h1>📋 Панель статусов — Lowcost Cleaning</h1>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="loadSheet('Главный', this)">🏠 Главный</button>
+    <button class="tab-btn" onclick="loadSheet('Химчистка', this)">🧺 Химчистка</button>
+    <button class="tab-btn" onclick="loadSheet('Апартаменты', this)">🏢 Апартаменты</button>
+  </div>
+</header>
+<div id="content" class="table-wrapper">
+  <div class="loading">⏳ Загрузка данных...</div>
+</div>
+<script>
+const BASE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8zb-CjwcHeTuOYB5iT5jz5RdMPaz0_BrTT6E1jPtaXfSbh7O1xykOE5WI92idU6A-SZ2GLzdcgtMU/pub?gid=";
+const gids = { "Главный": "0", "Химчистка": "591986483", "Апартаменты": "1636464154" };
+async function loadSheet(sheet, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class='loading'>⏳ Загрузка ${sheet}...</div>`;
+  const gid = gids[sheet];
+  try {
+    const url = `${BASE_URL}${gid}&single=true&output=csv&nocache=${Date.now()}`;
+    const res = await fetch(url);
+    const text = await res.text();
+    const rows = text.split('\n').map(r => r.split(',').map(c => c.replace(/"/g, '').trim())).filter(r => r.some(c => c));
+    if (rows.length < 2) { content.innerHTML = "<p class='loading'>Нет данных</p>"; return; }
+    const headers = rows[0]; const body = rows.slice(1);
+    let html = "<table><thead><tr>";
+    headers.forEach(h => html += `<th>${h}</th>`);
+    html += "</tr></thead><tbody>";
+    body.forEach(r => {
+      html += "<tr>";
+      r.forEach((cell) => {
+        const s = cell.toLowerCase();
+        if (["свободно","занято","ожидание","отказ"].includes(s))
+          html += `<td><span class='status ${s}'>${cell}</span></td>`;
+        else html += `<td>${cell}</td>`;
+      });
+      html += "</tr>";
+    });
+    html += "</tbody></table>";
+    content.innerHTML = html;
+  } catch (err) { content.innerHTML = "<p class='loading'>Ошибка загрузки данных</p>"; }
+}
+loadSheet("Главный", document.querySelector(".tab-btn.active"));
+</script>
+</body>
+</html>
