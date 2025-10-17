@@ -5,32 +5,186 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Lowcost Cleaning — Админ панель статусов</title>
 <style>
-  :root{--bg:#f7f7f7;--card:#fff;--muted:#666;--green:#34c759;--red:#ff3b30;--radius:14px}
-  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,sans-serif;background:var(--bg);color:#111;margin:0;padding:32px;display:flex;flex-direction:column;align-items:center;}
-  h1{margin:0 0 8px;font-size:28px}
-  p.lead{margin:0 0 24px;color:var(--muted)}
-  .tabs{display:flex;gap:8px;margin-bottom:18px}
-  .tab{padding:10px 14px;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
-  .tab.active{background:#111;color:#fff}
-  .card{width:min(920px,95%);background:var(--card);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.06);margin-bottom:20px}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #f0f0f0}
-  th{background:#fafafa}
-  select.status{padding:6px 10px;border-radius:10px;border:1px solid #e6e6e6}
-  .note{color:var(--muted);font-size:13px;margin-bottom:10px}
-  .toast{position:fixed;right:20px;top:20px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;opacity:0;transform:translateY(-6px);transition:all .25s}
-  .toast.show{opacity:1;transform:translateY(0)}
-  .loading{color:var(--muted);padding:24px;text-align:center}
-  .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-  .small{font-size:13px;color:var(--muted)}
-  input.webhook{width:420px;padding:8px 10px;border-radius:8px;border:1px solid #e6e6e6}
-  button.save{padding:8px 12px;border-radius:10px;border:none;background:#111;color:#fff;cursor:pointer}
-  .row-date{width:160px}
+  :root {
+    --bg:#f6f6f6;
+    --card:#fff;
+    --muted:#666;
+    --green:#34c759;
+    --red:#ff3b30;
+    --radius:14px;
+    --shadow:0 8px 25px rgba(0,0,0,0.05);
+  }
+
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,sans-serif;
+    background:var(--bg);
+    color:#111;
+    margin:0;
+    padding:32px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  h1 {
+    margin:0 0 8px;
+    font-size:28px;
+  }
+
+  p.lead {
+    margin:0 0 24px;
+    color:var(--muted);
+  }
+
+  .tabs {
+    display:flex;
+    gap:10px;
+  }
+
+  .tab {
+    padding:10px 16px;
+    border-radius:12px;
+    background:#fff;
+    border:1px solid rgba(0,0,0,0.08);
+    cursor:pointer;
+    transition:.2s;
+  }
+
+  .tab.active {
+    background:#111;
+    color:#fff;
+  }
+
+  .card {
+    width:min(920px,95%);
+    background:var(--card);
+    border-radius:16px;
+    padding:18px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+  }
+
+  .controls {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:16px;
+  }
+
+  .controls-right {
+    margin-left:auto;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+
+  input.webhook {
+    width:360px;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    font-size:14px;
+  }
+
+  button.save {
+    padding:8px 12px;
+    border-radius:10px;
+    border:none;
+    background:#111;
+    color:#fff;
+    cursor:pointer;
+    transition:.2s;
+  }
+
+  button.save:hover {
+    background:#333;
+  }
+
+  table {
+    width:100%;
+    border-collapse:collapse;
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+
+  th, td {
+    padding:10px 12px;
+    text-align:left;
+    border-bottom:1px solid #f0f0f0;
+    font-size:15px;
+  }
+
+  th {
+    background:#fafafa;
+    font-weight:600;
+  }
+
+  tr:last-child td {
+    border-bottom:none;
+  }
+
+  select.status {
+    padding:6px 10px;
+    border-radius:10px;
+    border:1px solid #ddd;
+    font-size:14px;
+  }
+
+  .note {
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:8px;
+  }
+
+  .toast {
+    position:fixed;
+    right:20px;
+    top:20px;
+    background:#111;
+    color:#fff;
+    padding:10px 14px;
+    border-radius:10px;
+    opacity:0;
+    transform:translateY(-6px);
+    transition:all .25s;
+  }
+
+  .toast.show {
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  .loading {
+    color:var(--muted);
+    padding:24px;
+    text-align:center;
+  }
+
+  td button.save-row {
+    background:#111;
+    color:white;
+    border:none;
+    border-radius:8px;
+    padding:6px 10px;
+    cursor:pointer;
+    font-size:13px;
+    transition:.2s;
+  }
+
+  td button.save-row:hover {
+    background:#333;
+  }
+
+  @media (max-width:700px) {
+    input.webhook {width:100%;}
+    .controls-right {flex-direction:column;align-items:flex-start;}
+  }
 </style>
 </head>
 <body>
   <h1>📋 Панель статусов — Lowcost Cleaning</h1>
-  <p class="lead">Здесь можно просмотреть и обновлять статусы с отправкой в n8n.</p>
+  <p class="lead">Здесь можно просматривать и обновлять статусы с отправкой в n8n.</p>
 
   <div class="card">
     <div class="controls">
@@ -39,8 +193,8 @@
         <div class="tab" data-sheet="Химчистка">🧺 Химчистка</div>
         <div class="tab" data-sheet="Апартаменты">🏢 Апартаменты</div>
       </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <span class="small">Webhook:</span>
+      <div class="controls-right">
+        <span style="font-size:13px;color:#666;">Webhook:</span>
         <input id="webhookInput" class="webhook" placeholder="https://vm62681.vpsone.xyz/webhook-test/status" />
         <button id="saveWebhook" class="save">Сохранить</button>
       </div>
@@ -54,9 +208,9 @@
 <script>
 const WEBHOOK_URL_KEY = "lc_webhook_url";
 const GIDS = {
-  "Главный":"0",
-  "Химчистка":"591986483",
-  "Апартаменты":"1636464154"
+  "Главный": "0",
+  "Химчистка": "591986483",
+  "Апартаменты": "1636464154"
 };
 const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8zb-CjwcHeTuOYB5iT5jz5RdMPaz0_BrTT6E1jPtaXfSbh7O1xykOE5WI92idU6A-SZ2GLzdcgtMU/pub?gid=";
 
@@ -67,97 +221,105 @@ const webhookInput = document.getElementById("webhookInput");
 const saveWebhook = document.getElementById("saveWebhook");
 
 webhookInput.value = localStorage.getItem(WEBHOOK_URL_KEY) || "";
-saveWebhook.addEventListener("click", ()=>{
+saveWebhook.addEventListener("click", () => {
   localStorage.setItem(WEBHOOK_URL_KEY, webhookInput.value.trim());
   showToast("Webhook сохранён");
 });
 
-document.querySelectorAll(".tab").forEach(t=>{
-  t.addEventListener("click",()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-    t.classList.add("active");
-    activeSheet = t.dataset.sheet;
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    activeSheet = tab.dataset.sheet;
     loadSheet(activeSheet);
   });
 });
 
-function showToast(msg){
-  toast.textContent=msg;
+function showToast(msg) {
+  toast.textContent = msg;
   toast.classList.add("show");
-  setTimeout(()=>toast.classList.remove("show"),2200);
+  setTimeout(() => toast.classList.remove("show"), 2200);
 }
 
-async function fetchCsv(gid){
+async function fetchCsv(gid) {
   const url = `${BASE_CSV}${gid}&single=true&output=csv&nocache=${Date.now()}`;
-  const res = await fetch(url,{cache:"no-store"});
-  if(!res.ok) throw new Error("Ошибка загрузки CSV");
-  const txt = await res.text();
-  return txt.split("\n").map(r=>r.split(",").map(c=>c.trim().replace(/^"|"$/g,"")));
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Ошибка загрузки CSV");
+  const text = await res.text();
+  return text.split("\n").map(r => r.split(",").map(c => c.trim().replace(/^"|"$/g, "")));
 }
 
-async function loadSheet(sheetName){
+async function loadSheet(sheetName) {
   content.innerHTML = `<p class="loading">Загрузка ${sheetName}...</p>`;
-  try{
+  try {
     const gid = GIDS[sheetName];
     const rows = await fetchCsv(gid);
-    const data = rows.filter(r => r && r.length && r.some(cell=>cell!==""));
-    const header = data[0]||[];
+    const data = rows.filter(r => r && r.length && r.some(cell => cell !== ""));
+    const headers = data[0] || [];
     const body = data.slice(1);
+
+    // Показываем только нужные колонки
+    const visibleCols = ["дата", "статус", "услуга", "адрес", "имя", "телефон", "ватсап", "телеграм"];
+    const colIndexes = headers.map((h, i) => visibleCols.includes(h.toLowerCase()) ? i : -1).filter(i => i !== -1);
+
     let html = `<div class="note">Лист: <b>${sheetName}</b> — строк: ${body.length}</div>`;
-    html += `<table><thead><tr>${header.map(h=>`<th>${h}</th>`).join("")}<th>Действие</th></tr></thead><tbody>`;
-    body.forEach((row,idx)=>{
-      const rowIndex = idx+2;
+    html += `<table><thead><tr>${colIndexes.map(i => `<th>${headers[i]}</th>`).join("")}<th>Действие</th></tr></thead><tbody>`;
+
+    body.forEach((row, idx) => {
+      const rowIndex = idx + 2;
       html += `<tr data-row="${rowIndex}">`;
-      row.forEach((cell,ci)=>{
-        const h = (header[ci]||"").toLowerCase();
-        if(h.includes("статус")){
-          const s = cell.toLowerCase();
-          const opts=["свободно","занято","ожидание","отказ",""];
+      colIndexes.forEach(ci => {
+        const h = (headers[ci] || "").toLowerCase();
+        const cell = row[ci] || "";
+        if (h.includes("статус")) {
+          const opts = ["свободно", "занято", "ожидание", "отказ", ""];
           html += `<td><select class="status" data-col="${ci}">
-            ${opts.map(o=>`<option value="${o}" ${o===s?"selected":""}>${o||"—"}</option>`).join("")}
+            ${opts.map(o => `<option value="${o}" ${o === cell.toLowerCase() ? "selected" : ""}>${o || "—"}</option>`).join("")}
             <option value="__other__">Другое...</option>
           </select></td>`;
-        }else html+=`<td>${cell}</td>`;
+        } else html += `<td>${cell}</td>`;
       });
-      html+=`<td><button class="save-row">Сохранить</button></td></tr>`;
+      html += `<td><button class="save-row">Сохранить</button></td></tr>`;
     });
-    html+="</tbody></table>";
-    content.innerHTML=html;
-    document.querySelectorAll(".save-row").forEach(btn=>{
-      btn.addEventListener("click",async()=>{
-        const tr=btn.closest("tr");
-        const row=tr.dataset.row;
-        const sel=tr.querySelector("select.status");
-        const newStatus=sel?sel.value:"";
-        const dateCell=tr.querySelector("td")?.textContent.trim()||"";
-        try{
+
+    html += "</tbody></table>";
+    content.innerHTML = html;
+
+    document.querySelectorAll(".save-row").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const tr = btn.closest("tr");
+        const row = tr.dataset.row;
+        const statusSel = tr.querySelector("select.status");
+        const newStatus = statusSel ? statusSel.value : "";
+        const dateCell = tr.querySelector("td")?.textContent.trim() || "";
+        try {
           await sendWebhook({
-            sheet:activeSheet,
-            row:row,
-            date:dateCell,
-            status:newStatus
+            sheet: activeSheet,
+            row: row,
+            date: dateCell,
+            status: newStatus
           });
           showToast("✅ Отправлено");
-        }catch(err){
+        } catch (err) {
           console.error(err);
           showToast("⚠️ Ошибка");
         }
       });
     });
-  }catch(err){
+
+  } catch (err) {
     console.error(err);
-    content.innerHTML="<p class='loading'>Ошибка загрузки данных</p>";
+    content.innerHTML = "<p class='loading'>Ошибка загрузки данных</p>";
   }
 }
 
-// 🚀 Отправка запроса в n8n (метод GET)
-async function sendWebhook(payload){
-  const baseUrl=(localStorage.getItem(WEBHOOK_URL_KEY)||"").trim();
-  if(!baseUrl) throw new Error("Webhook URL не указан");
-  const params=new URLSearchParams(payload);
-  const url=`${baseUrl}?${params.toString()}`;
-  const res=await fetch(url,{method:"GET",cache:"no-store"});
-  if(!res.ok) throw new Error("Ошибка "+res.status);
+async function sendWebhook(payload) {
+  const baseUrl = (localStorage.getItem(WEBHOOK_URL_KEY) || "").trim();
+  if (!baseUrl) throw new Error("Webhook URL не указан");
+  const params = new URLSearchParams(payload);
+  const url = `${baseUrl}?${params.toString()}`;
+  const res = await fetch(url, { method: "GET", cache: "no-store" });
+  if (!res.ok) throw new Error("Ошибка " + res.status);
   return res;
 }
 
