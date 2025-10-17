@@ -3,279 +3,393 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Lowcost Cleaning — Панель статусов</title>
+<title>Евгенуборки — Админ панель статусов</title>
 <style>
-  :root {
-    --bg:#f6f6f6;
-    --card:#fff;
-    --muted:#666;
-    --radius:14px;
-    --shadow:0 8px 25px rgba(0,0,0,0.05);
+  :root{
+    --bg:#f5f5f7;
+    --card:#ffffff;
+    --muted:#6e6e73;
+    --text:#111;
+    --line:#e5e5ea;
+    --green:#34c759;
+    --red:#ff3b30;
+    --blue:#0a84ff;
+    --radius:16px;
+    --shadow:0 12px 30px rgba(0,0,0,0.06);
   }
-
-  body {
-    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,sans-serif;
-    background:var(--bg);
-    color:#111;
-    margin:0;
-    padding:32px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
+  *{box-sizing:border-box}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,system-ui,sans-serif;
+    background:var(--bg); color:var(--text); margin:0; padding:24px;
+    display:flex; flex-direction:column; align-items:center;
   }
-
-  h1 {margin:0 0 8px;font-size:28px;}
-  p.lead {margin:0 0 24px;color:var(--muted);}
-  .tabs {display:flex;gap:10px;}
-  .tab {
-    padding:10px 16px;
-    border-radius:12px;
-    background:#fff;
-    border:1px solid rgba(0,0,0,0.08);
-    cursor:pointer;
-    transition:.2s;
+  header{width:min(980px,94%); margin:0 auto 18px;}
+  h1{margin:0 0 6px; font-size:28px; letter-spacing:-.3px; font-weight:700;}
+  p.lead{margin:0; color:var(--muted); font-size:15px}
+  .shell{width:min(980px,94%); background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;}
+  .topbar{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+  .tabs{display:flex; gap:8px; background:#f8f8f8; padding:6px; border-radius:12px; border:1px solid var(--line)}
+  .tab{padding:10px 14px; border-radius:10px; cursor:pointer; user-select:none; color:#111}
+  .tab.active{background:#111; color:#fff}
+  .hooks{margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .hook-wrap{display:flex; gap:6px; align-items:center}
+  .hook-wrap label{font-size:12px; color:var(--muted)}
+  input.webhook{width:260px; max-width:64vw; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:#fff; font-size:14px}
+  button.savehooks{padding:10px 14px; border-radius:12px; border:none; background:#111; color:#fff; cursor:pointer}
+  .note{color:var(--muted); font-size:13px; margin:10px 2px}
+  .table-wrap{overflow:auto; border:1px solid var(--line); border-radius:12px}
+  table{width:100%; border-collapse:collapse; min-width:520px}
+  thead th{position:sticky; top:0; background:#fafafa; color:#111; font-weight:600; font-size:14px; text-align:left; border-bottom:1px solid var(--line); padding:12px 12px}
+  tbody td{border-bottom:1px solid #f0f0f0; padding:12px 12px; font-size:14px; vertical-align:middle}
+  .row-controls{white-space:nowrap}
+  select.status{padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:#fff; font-size:14px}
+  button.row-save{padding:8px 12px; border-radius:10px; border:none; background:#111; color:#fff; cursor:pointer}
+  .pill{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line); color:var(--muted)}
+  .toast{position:fixed; right:20px; top:20px; background:#111; color:#fff; padding:10px 14px; border-radius:12px; opacity:0; transform:translateY(-6px); transition:all .25s; z-index:1000}
+  .toast.show{opacity:1; transform:translateY(0)}
+  .legend{display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--muted)}
+  .legend .dot{width:8px; height:8px; border-radius:50%}
+  .g{background:var(--green)} .r{background:var(--red)} .b{background:var(--blue)}
+  .login-overlay{
+    position:fixed; inset:0; background:linear-gradient(180deg,#f7f7f9, #ececf1);
+    display:flex; align-items:center; justify-content:center; z-index:2000;
   }
-  .tab.active {background:#111;color:#fff;}
-  .card {
-    width:min(900px,95%);
-    background:var(--card);
-    border-radius:16px;
-    padding:18px;
-    box-shadow:var(--shadow);
-    margin-bottom:20px;
+  .login-card{
+    width:min(420px,90%); background:#fff; border-radius:20px; padding:22px 20px 18px;
+    box-shadow:0 20px 50px rgba(0,0,0,.08); border:1px solid var(--line); text-align:center;
+    animation:pop .18s ease-out;
   }
-  .controls {
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    align-items:center;
-    margin-bottom:16px;
-  }
-  .controls-right {
-    margin-left:auto;
-    display:flex;
-    gap:8px;
-    align-items:center;
-  }
-  input.webhook {
-    width:360px;
-    padding:8px 10px;
-    border-radius:8px;
-    border:1px solid #ddd;
-    font-size:14px;
-  }
-  button.save {
-    padding:8px 12px;
-    border-radius:10px;
-    border:none;
-    background:#111;
-    color:#fff;
-    cursor:pointer;
-    transition:.2s;
-  }
-  button.save:hover {background:#333;}
-  table {width:100%;border-collapse:collapse;}
-  th, td {
-    padding:10px 12px;
-    text-align:left;
-    border-bottom:1px solid #f0f0f0;
-    font-size:15px;
-  }
-  th {background:#fafafa;font-weight:600;}
-  select.status {
-    padding:6px 10px;
-    border-radius:10px;
-    border:1px solid #ddd;
-    font-size:14px;
-  }
-  .note {color:var(--muted);font-size:13px;margin-bottom:8px;}
-  .toast {
-    position:fixed;
-    right:20px;
-    top:20px;
-    background:#111;
-    color:#fff;
-    padding:10px 14px;
-    border-radius:10px;
-    opacity:0;
-    transform:translateY(-6px);
-    transition:all .25s;
-  }
-  .toast.show {opacity:1;transform:translateY(0);}
-  .loading {color:var(--muted);padding:24px;text-align:center;}
-  td button.save-row {
-    background:#111;
-    color:white;
-    border:none;
-    border-radius:8px;
-    padding:6px 10px;
-    cursor:pointer;
-    font-size:13px;
-    transition:.2s;
-  }
-  td button.save-row:hover {background:#333;}
-  @media (max-width:700px) {
-    input.webhook{width:100%;}
-    .controls-right{flex-direction:column;align-items:flex-start;}
+  .login-card h2{margin:0 0 8px; font-size:22px}
+  .login-card p{margin:0 0 14px; color:var(--muted)}
+  .login-row{display:flex; gap:8px; margin-top:8px; justify-content:center}
+  .login-input{flex:1; padding:12px 14px; border-radius:12px; border:1px solid var(--line); font-size:16px}
+  .login-btn{padding:12px 16px; border-radius:12px; border:none; background:#111; color:#fff; font-size:16px; cursor:pointer}
+  @keyframes pop {from{transform:scale(.98); opacity:.5} to{transform:scale(1); opacity:1}}
+  @media (max-width:720px){
+    body{padding:16px}
+    .hooks{margin-left:0}
+    input.webhook{width:200px}
+    thead th, tbody td{padding:10px}
+    .tab{padding:8px 12px}
   }
 </style>
 </head>
 <body>
-  <h1>📋 Панель статусов — Lowcost Cleaning</h1>
-  <p class="lead">Здесь можно просматривать и обновлять статусы с отправкой в n8n.</p>
+  <!-- LOGIN OVERLAY -->
+  <div id="login" class="login-overlay" style="display:none">
+    <div class="login-card">
+      <h2>Евгенуборки</h2>
+      <p>Вход в админ-панель</p>
+      <div class="login-row">
+        <input id="pass" class="login-input" type="password" inputmode="numeric" placeholder="Пароль" />
+        <button id="enter" class="login-btn">Войти</button>
+      </div>
+      <p class="note" style="margin-top:10px">Подсказка: 4 цифры 😉</p>
+    </div>
+  </div>
 
-  <div class="card">
-    <div class="controls">
+  <header>
+    <h1>Евгенуборки — Админ панель статусов</h1>
+    <p class="lead">Просмотр и обновление статусов заявок с отправкой в ваши вебхуки (n8n).</p>
+  </header>
+
+  <div class="shell">
+    <div class="topbar">
       <div class="tabs">
-        <div class="tab active" data-sheet="Главный">🏠 Евгенуборки</div>
+        <div class="tab active" data-sheet="Евгенуборки">🏠 Евгенуборки</div>
         <div class="tab" data-sheet="Химчистка">🧺 Химчистка</div>
         <div class="tab" data-sheet="Апартаменты">🏢 Апартаменты</div>
       </div>
-      <div class="controls-right">
-        <span style="font-size:13px;color:#666;">Webhook:</span>
-        <input id="webhookInput" class="webhook" placeholder="URL для этого листа" />
-        <button id="saveWebhook" class="save">Сохранить</button>
+
+      <div class="hooks">
+        <div class="hook-wrap">
+          <label for="wh-evg">Евгенуборки</label>
+          <input id="wh-evg" class="webhook" placeholder="https://... (вебхук)" />
+        </div>
+        <div class="hook-wrap">
+          <label for="wh-chem">Химчистка</label>
+          <input id="wh-chem" class="webhook" placeholder="https://... (вебхук)" />
+        </div>
+        <div class="hook-wrap">
+          <label for="wh-apts">Апартаменты</label>
+          <input id="wh-apts" class="webhook" placeholder="https://... (вебхук)" />
+        </div>
+        <button class="savehooks" id="saveHooksBtn">Сохранить</button>
       </div>
     </div>
 
-    <div id="content"><p class="loading">Загрузка...</p></div>
+    <div class="note">
+      Показаны только необходимые поля. Редактируется только «Статус».
+      <span class="legend" style="margin-left:8px">
+        <span class="dot g"></span> свободно
+        <span class="dot b"></span> ожидание
+        <span class="dot r"></span> занято / отказ
+      </span>
+    </div>
+
+    <div class="table-wrap" id="tableWrap">
+      <table id="grid"><thead></thead><tbody></tbody></table>
+    </div>
   </div>
 
   <div id="toast" class="toast">Готово</div>
 
 <script>
-const WEBHOOK_KEYS = {
-  "Главный": "lc_webhook_main",
-  "Химчистка": "lc_webhook_clean",
-  "Апартаменты": "lc_webhook_apart"
-};
-
+/* ===================== CONFIG ===================== */
+const PASSCODE = "1234"; // поменяете позже
 const GIDS = {
-  "Главный": "0",
-  "Химчистка": "591986483",
-  "Апартаменты": "1636464154"
+  "Евгенуборки":"0",
+  "Химчистка":"591986483",
+  "Апартаменты":"1636464154"
 };
-
 const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8zb-CjwcHeTuOYB5iT5jz5RdMPaz0_BrTT6E1jPtaXfSbh7O1xykOE5WI92idU6A-SZ2GLzdcgtMU/pub?gid=";
 
-let activeSheet = "Главный";
-const content = document.getElementById("content");
-const toast = document.getElementById("toast");
-const webhookInput = document.getElementById("webhookInput");
-const saveWebhook = document.getElementById("saveWebhook");
+// localStorage keys for webhooks
+const WH_KEYS = {
+  "Евгенуборки":"wh_evg",
+  "Химчистка":"wh_chem",
+  "Апартаменты":"wh_apts",
+};
 
-saveWebhook.addEventListener("click", () => {
-  const key = WEBHOOK_KEYS[activeSheet];
-  localStorage.setItem(key, webhookInput.value.trim());
-  showToast(`Webhook для "${activeSheet}" сохранён`);
+/* ===================== UI ELEMENTS ===================== */
+const login = document.getElementById("login");
+const pass = document.getElementById("pass");
+const enter = document.getElementById("enter");
+const toast = document.getElementById("toast");
+const grid = document.getElementById("grid");
+const thead = grid.querySelector("thead");
+const tbody = grid.querySelector("tbody");
+const saveHooksBtn = document.getElementById("saveHooksBtn");
+
+const whInputs = {
+  "Евгенуборки": document.getElementById("wh-evg"),
+  "Химчистка": document.getElementById("wh-chem"),
+  "Апартаменты": document.getElementById("wh-apts"),
+};
+
+let activeSheet = "Евгенуборки";
+let cachedRows = []; // raw CSV rows
+let headerMap = {};  // column name -> index
+
+/* ===================== LOGIN ===================== */
+function showLoginIfNeeded(){
+  if (sessionStorage.getItem("evg_admin_ok")==="1") return;
+  login.style.display = "flex";
+  pass.focus();
+}
+enter.addEventListener("click", doLogin);
+pass.addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
+function doLogin(){
+  if ((pass.value||"").trim() === PASSCODE){
+    sessionStorage.setItem("evg_admin_ok","1");
+    login.style.display = "none";
+  } else {
+    showToast("Неверный пароль");
+  }
+}
+showLoginIfNeeded();
+
+/* ===================== HELPERS ===================== */
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"), 2000);
+}
+
+function normalize(str){
+  return (str||"").toString().trim().toLowerCase();
+}
+
+// try to parse simple CSV (no quoted commas expected)
+function parseCsvText(txt){
+  return txt.split("\n").map(row => row.split(",").map(c => c.trim().replace(/^"|"$/g,"")));
+}
+
+// build header map (case-insensitive)
+function makeHeaderMap(header){
+  const map = {};
+  header.forEach((h,i)=>{
+    const key = normalize(h);
+    map[key]=i;
+  });
+  return map;
+}
+
+async function fetchCsv(gid){
+  const url = `${BASE_CSV}${gid}&single=true&output=csv&nocache=${Date.now()}`;
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error("Ошибка загрузки CSV");
+  const txt = await res.text();
+  return parseCsvText(txt);
+}
+
+/* ===================== SHEET LOADING + RENDER ===================== */
+async function loadSheet(name){
+  try{
+    // load webhook inputs from storage (once per load for UX)
+    for(const k in WH_KEYS){
+      const v = localStorage.getItem(WH_KEYS[k]) || "";
+      whInputs[k].value = v;
+    }
+
+    const gid = GIDS[name];
+    const rows = await fetchCsv(gid);
+    // clean empty lines
+    const cleaned = rows.filter(r => r && r.length && r.some(x=>x!==""));
+    cachedRows = cleaned;
+    const header = cleaned[0] || [];
+    headerMap = makeHeaderMap(header);
+
+    renderTable(name);
+  }catch(e){
+    console.error(e);
+    thead.innerHTML = "";
+    tbody.innerHTML = `<tr><td style="padding:16px;color:#999">Не удалось загрузить данные</td></tr>`;
+  }
+}
+
+function renderTable(sheet){
+  // mapping for columns we need per sheet
+  // we try to read fields by russian header names
+  // допустимые ключи: дата, время, статус, адрес, жк, комплекс, апартамент
+  const H = headerMap;
+  const rows = cachedRows.slice(1);
+
+  // Build table head
+  let headHtml = "<tr>";
+  if(sheet==="Апартаменты"){
+    headHtml += "<th>Дата</th><th>Время</th><th>Статус</th><th>ЖК</th><th>Апартамент</th><th></th>";
+  }else{
+    headHtml += "<th>Дата</th><th>Статус</th><th>Адрес</th><th></th>";
+  }
+  headHtml += "</tr>";
+  thead.innerHTML = headHtml;
+
+  // Build body
+  const statusOptions = ["свободно","занято","ожидание","отказ",""];
+  let bodyHtml = "";
+
+  rows.forEach((r, idx)=>{
+    const rowIndex = idx + 2; // 1-based header +1
+
+    const v = (keyList)=>{ // helper to get first found header index among aliases
+      for(const key of keyList){
+        const i = H[normalize(key)];
+        if(i !== undefined) return (r[i]||"").trim();
+      }
+      return "";
+    };
+
+    const date = v(["дата"]);
+    const time = v(["время"]);
+    const status = normalize(v(["статус"]));
+    const address = v(["адрес"]);
+    const complex = v(["жк","комплекс"]);
+    const apartment = v(["апартамент"]);
+
+    // pick row color pill by status (for quick glance)
+    let pillClass = "";
+    if(status==="свободно") pillClass = "g";
+    else if(status==="ожидание") pillClass = "b";
+    else if(status==="занято" || status==="отказ") pillClass = "r";
+
+    if(sheet==="Апартаменты"){
+      bodyHtml += `<tr data-row="${rowIndex}">
+        <td>${date||"—"}</td>
+        <td>${time||"—"}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="dot ${pillClass}" style="width:8px;height:8px;border-radius:50%"></span>
+            <select class="status">
+              ${statusOptions.map(o=>`<option value="${o}" ${o===status?"selected":""}>${o||"—"}</option>`).join("")}
+            </select>
+          </div>
+        </td>
+        <td>${complex||"—"}</td>
+        <td>${apartment||"—"}</td>
+        <td class="row-controls"><button class="row-save">Сохранить</button></td>
+      </tr>`;
+    }else{
+      bodyHtml += `<tr data-row="${rowIndex}">
+        <td>${date||"—"}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="dot ${pillClass}" style="width:8px;height:8px;border-radius:50%"></span>
+            <select class="status">
+              ${statusOptions.map(o=>`<option value="${o}" ${o===status?"selected":""}>${o||"—"}</option>`).join("")}
+            </select>
+          </div>
+        </td>
+        <td>${address||"—"}</td>
+        <td class="row-controls"><button class="row-save">Сохранить</button></td>
+      </tr>`;
+    }
+  });
+
+  tbody.innerHTML = bodyHtml;
+
+  // attach row handlers
+  tbody.querySelectorAll(".row-save").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const tr = btn.closest("tr");
+      const row = tr.dataset.row;
+      const statusSel = tr.querySelector("select.status");
+      const newStatus = (statusSel?.value || "").trim();
+
+      // collect visible fields from row cells (as rendered)
+      const tds = Array.from(tr.querySelectorAll("td"));
+      let payload = { sheet, row, status: newStatus };
+
+      if(sheet==="Апартаменты"){
+        payload.date = (tds[0]?.textContent || "").trim();
+        payload.time = (tds[1]?.textContent || "").trim();
+        payload.complex = (tds[3]?.textContent || "").trim();
+        payload.apartment = (tds[4]?.textContent || "").trim();
+      }else{
+        payload.date = (tds[0]?.textContent || "").trim();
+        payload.address = (tds[2]?.textContent || "").trim();
+      }
+
+      try{
+        await sendWebhook(sheet, payload);
+        showToast("✅ Сохранено и отправлено");
+      }catch(err){
+        console.error(err);
+        showToast("⚠️ Ошибка отправки");
+      }
+    });
+  });
+}
+
+/* ===================== WEBHOOKS ===================== */
+saveHooksBtn.addEventListener("click", ()=>{
+  for(const sheet in WH_KEYS){
+    localStorage.setItem(WH_KEYS[sheet], (whInputs[sheet].value||"").trim());
+  }
+  showToast("Вебхуки сохранены");
 });
 
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+async function sendWebhook(sheet, payload){
+  const key = WH_KEYS[sheet];
+  const url = (localStorage.getItem(key)||"").trim();
+  if(!url) throw new Error("Webhook URL не указан для листа: "+sheet);
+  const qs = new URLSearchParams(payload).toString();
+  const full = `${url}?${qs}`;
+  const res = await fetch(full, { method:"GET", cache:"no-store" });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+}
+
+/* ===================== TABS ===================== */
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
     tab.classList.add("active");
     activeSheet = tab.dataset.sheet;
-    loadWebhook();
     loadSheet(activeSheet);
   });
 });
 
-function loadWebhook(){
-  const key = WEBHOOK_KEYS[activeSheet];
-  webhookInput.value = localStorage.getItem(key) || "";
-}
-
-function showToast(msg) {
-  toast.textContent = msg;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 2200);
-}
-
-async function fetchCsv(gid) {
-  const url = `${BASE_CSV}${gid}&single=true&output=csv&nocache=${Date.now()}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error("Ошибка загрузки CSV");
-  const text = await res.text();
-  return text.split("\n").map(r => r.split(",").map(c => c.trim().replace(/^"|"$/g, "")));
-}
-
-async function loadSheet(sheetName) {
-  content.innerHTML = `<p class="loading">Загрузка ${sheetName}...</p>`;
-  try {
-    const gid = GIDS[sheetName];
-    const rows = await fetchCsv(gid);
-    const data = rows.filter(r => r && r.length && r.some(cell => cell !== ""));
-    const headers = data[0] || [];
-    const body = data.slice(1);
-
-    let visibleCols = [];
-    if (sheetName === "Апартаменты") visibleCols = ["дата", "время", "статус", "жк", "апартамент"];
-    else visibleCols = ["дата", "статус", "адрес"];
-
-    const colIndexes = headers.map((h, i) => visibleCols.includes(h.toLowerCase()) ? i : -1).filter(i => i !== -1);
-
-    let html = `<div class="note">Лист: <b>${sheetName}</b> — строк: ${body.length}</div>`;
-    html += `<table><thead><tr>${colIndexes.map(i => `<th>${headers[i]}</th>`).join("")}<th>Действие</th></tr></thead><tbody>`;
-
-    body.forEach((row, idx) => {
-      const rowIndex = idx + 2;
-      html += `<tr data-row="${rowIndex}">`;
-      colIndexes.forEach(ci => {
-        const h = (headers[ci] || "").toLowerCase();
-        const cell = row[ci] || "";
-        if (h.includes("статус")) {
-          const opts = ["свободно", "занято", "ожидание", "отказ", ""];
-          html += `<td><select class="status" data-col="${ci}">
-            ${opts.map(o => `<option value="${o}" ${o === cell.toLowerCase() ? "selected" : ""}>${o || "—"}</option>`).join("")}
-          </select></td>`;
-        } else html += `<td>${cell}</td>`;
-      });
-      html += `<td><button class="save-row">Сохранить</button></td></tr>`;
-    });
-
-    html += "</tbody></table>";
-    content.innerHTML = html;
-
-    document.querySelectorAll(".save-row").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const tr = btn.closest("tr");
-        const row = tr.dataset.row;
-        const statusSel = tr.querySelector("select.status");
-        const newStatus = statusSel ? statusSel.value : "";
-        const dateCell = tr.querySelector("td")?.textContent.trim() || "";
-        try {
-          await sendWebhook({
-            sheet: activeSheet,
-            row: row,
-            date: dateCell,
-            status: newStatus
-          });
-          showToast("✅ Отправлено");
-        } catch (err) {
-          console.error(err);
-          showToast("⚠️ Ошибка");
-        }
-      });
-    });
-
-  } catch (err) {
-    console.error(err);
-    content.innerHTML = "<p class='loading'>Ошибка загрузки данных</p>";
-  }
-}
-
-async function sendWebhook(payload) {
-  const key = WEBHOOK_KEYS[activeSheet];
-  const baseUrl = (localStorage.getItem(key) || "").trim();
-  if (!baseUrl) throw new Error("Webhook URL не указан");
-  const params = new URLSearchParams(payload);
-  const url = `${baseUrl}?${params.toString()}`;
-  const res = await fetch(url, { method: "GET", cache: "no-store" });
-  if (!res.ok) throw new Error("Ошибка " + res.status);
-  return res;
-}
-
-loadWebhook();
+/* ===================== INIT ===================== */
 loadSheet(activeSheet);
 </script>
 </body>
