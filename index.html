@@ -9,8 +9,6 @@
     --bg:#f6f6f6;
     --card:#fff;
     --muted:#666;
-    --green:#34c759;
-    --red:#ff3b30;
     --radius:14px;
     --shadow:0 8px 25px rgba(0,0,0,0.05);
   }
@@ -26,21 +24,9 @@
     align-items:center;
   }
 
-  h1 {
-    margin:0 0 8px;
-    font-size:28px;
-  }
-
-  p.lead {
-    margin:0 0 24px;
-    color:var(--muted);
-  }
-
-  .tabs {
-    display:flex;
-    gap:10px;
-  }
-
+  h1 {margin:0 0 8px;font-size:28px;}
+  p.lead {margin:0 0 24px;color:var(--muted);}
+  .tabs {display:flex;gap:10px;}
   .tab {
     padding:10px 16px;
     border-radius:12px;
@@ -49,12 +35,7 @@
     cursor:pointer;
     transition:.2s;
   }
-
-  .tab.active {
-    background:#111;
-    color:#fff;
-  }
-
+  .tab.active {background:#111;color:#fff;}
   .card {
     width:min(900px,95%);
     background:var(--card);
@@ -63,7 +44,6 @@
     box-shadow:var(--shadow);
     margin-bottom:20px;
   }
-
   .controls {
     display:flex;
     flex-wrap:wrap;
@@ -71,14 +51,12 @@
     align-items:center;
     margin-bottom:16px;
   }
-
   .controls-right {
     margin-left:auto;
     display:flex;
     gap:8px;
     align-items:center;
   }
-
   input.webhook {
     width:360px;
     padding:8px 10px;
@@ -86,7 +64,6 @@
     border:1px solid #ddd;
     font-size:14px;
   }
-
   button.save {
     padding:8px 12px;
     border-radius:10px;
@@ -96,47 +73,22 @@
     cursor:pointer;
     transition:.2s;
   }
-
-  button.save:hover {
-    background:#333;
-  }
-
-  table {
-    width:100%;
-    border-collapse:collapse;
-    border-radius:var(--radius);
-    overflow:hidden;
-  }
-
+  button.save:hover {background:#333;}
+  table {width:100%;border-collapse:collapse;}
   th, td {
     padding:10px 12px;
     text-align:left;
     border-bottom:1px solid #f0f0f0;
     font-size:15px;
   }
-
-  th {
-    background:#fafafa;
-    font-weight:600;
-  }
-
-  tr:last-child td {
-    border-bottom:none;
-  }
-
+  th {background:#fafafa;font-weight:600;}
   select.status {
     padding:6px 10px;
     border-radius:10px;
     border:1px solid #ddd;
     font-size:14px;
   }
-
-  .note {
-    color:var(--muted);
-    font-size:13px;
-    margin-bottom:8px;
-  }
-
+  .note {color:var(--muted);font-size:13px;margin-bottom:8px;}
   .toast {
     position:fixed;
     right:20px;
@@ -149,18 +101,8 @@
     transform:translateY(-6px);
     transition:all .25s;
   }
-
-  .toast.show {
-    opacity:1;
-    transform:translateY(0);
-  }
-
-  .loading {
-    color:var(--muted);
-    padding:24px;
-    text-align:center;
-  }
-
+  .toast.show {opacity:1;transform:translateY(0);}
+  .loading {color:var(--muted);padding:24px;text-align:center;}
   td button.save-row {
     background:#111;
     color:white;
@@ -171,14 +113,10 @@
     font-size:13px;
     transition:.2s;
   }
-
-  td button.save-row:hover {
-    background:#333;
-  }
-
+  td button.save-row:hover {background:#333;}
   @media (max-width:700px) {
-    input.webhook {width:100%;}
-    .controls-right {flex-direction:column;align-items:flex-start;}
+    input.webhook{width:100%;}
+    .controls-right{flex-direction:column;align-items:flex-start;}
   }
 </style>
 </head>
@@ -195,7 +133,7 @@
       </div>
       <div class="controls-right">
         <span style="font-size:13px;color:#666;">Webhook:</span>
-        <input id="webhookInput" class="webhook" placeholder="https://vm62681.vpsone.xyz/webhook-test/status" />
+        <input id="webhookInput" class="webhook" placeholder="URL для этого листа" />
         <button id="saveWebhook" class="save">Сохранить</button>
       </div>
     </div>
@@ -206,12 +144,18 @@
   <div id="toast" class="toast">Готово</div>
 
 <script>
-const WEBHOOK_URL_KEY = "lc_webhook_url";
+const WEBHOOK_KEYS = {
+  "Главный": "lc_webhook_main",
+  "Химчистка": "lc_webhook_clean",
+  "Апартаменты": "lc_webhook_apart"
+};
+
 const GIDS = {
   "Главный": "0",
   "Химчистка": "591986483",
   "Апартаменты": "1636464154"
 };
+
 const BASE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8zb-CjwcHeTuOYB5iT5jz5RdMPaz0_BrTT6E1jPtaXfSbh7O1xykOE5WI92idU6A-SZ2GLzdcgtMU/pub?gid=";
 
 let activeSheet = "Главный";
@@ -220,10 +164,10 @@ const toast = document.getElementById("toast");
 const webhookInput = document.getElementById("webhookInput");
 const saveWebhook = document.getElementById("saveWebhook");
 
-webhookInput.value = localStorage.getItem(WEBHOOK_URL_KEY) || "";
 saveWebhook.addEventListener("click", () => {
-  localStorage.setItem(WEBHOOK_URL_KEY, webhookInput.value.trim());
-  showToast("Webhook сохранён");
+  const key = WEBHOOK_KEYS[activeSheet];
+  localStorage.setItem(key, webhookInput.value.trim());
+  showToast(`Webhook для "${activeSheet}" сохранён`);
 });
 
 document.querySelectorAll(".tab").forEach(tab => {
@@ -231,9 +175,15 @@ document.querySelectorAll(".tab").forEach(tab => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     tab.classList.add("active");
     activeSheet = tab.dataset.sheet;
+    loadWebhook();
     loadSheet(activeSheet);
   });
 });
+
+function loadWebhook(){
+  const key = WEBHOOK_KEYS[activeSheet];
+  webhookInput.value = localStorage.getItem(key) || "";
+}
 
 function showToast(msg) {
   toast.textContent = msg;
@@ -258,13 +208,9 @@ async function loadSheet(sheetName) {
     const headers = data[0] || [];
     const body = data.slice(1);
 
-    // видимые колонки по листу
     let visibleCols = [];
-    if (sheetName === "Апартаменты") {
-      visibleCols = ["дата", "время", "статус", "жк", "апартамент"];
-    } else {
-      visibleCols = ["дата", "статус", "адрес"];
-    }
+    if (sheetName === "Апартаменты") visibleCols = ["дата", "время", "статус", "жк", "апартамент"];
+    else visibleCols = ["дата", "статус", "адрес"];
 
     const colIndexes = headers.map((h, i) => visibleCols.includes(h.toLowerCase()) ? i : -1).filter(i => i !== -1);
 
@@ -319,7 +265,8 @@ async function loadSheet(sheetName) {
 }
 
 async function sendWebhook(payload) {
-  const baseUrl = (localStorage.getItem(WEBHOOK_URL_KEY) || "").trim();
+  const key = WEBHOOK_KEYS[activeSheet];
+  const baseUrl = (localStorage.getItem(key) || "").trim();
   if (!baseUrl) throw new Error("Webhook URL не указан");
   const params = new URLSearchParams(payload);
   const url = `${baseUrl}?${params.toString()}`;
@@ -328,6 +275,7 @@ async function sendWebhook(payload) {
   return res;
 }
 
+loadWebhook();
 loadSheet(activeSheet);
 </script>
 </body>
